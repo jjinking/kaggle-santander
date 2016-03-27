@@ -5,20 +5,40 @@ Author: Joseph Kim
 import pandas as pd
 import sys
 from sklearn.cross_validation import train_test_split
+from sklearn.preprocessing import Imputer
 from os.path import expanduser
 sys.path.insert(1, '{}/datsci'.format(expanduser('~')))
 
 from datsci import eda, munge
 
 
-TARGET_COL = 'TARGET'
+FILE_TRAIN                                 = 'data/train.csv'
+FILE_TRAIN_DEDUP                           = 'data/train.dedup.csv'
+FILE_TRAIN_DEDUP_ONEHOT                    = 'data/train.dedup.onehot.csv'
+FILE_TRAIN_DEDUP_ONEHOT_NA                 = 'data/train.dedup.onehot.na.csv'
+FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN     = 'data/train.dedup.onehot.na.impute_mean.csv'
+FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN   = 'data/train.dedup.onehot.na.impute_median.csv'
+FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_FREQ     = 'data/train.dedup.onehot.na.impute_freq.csv'
+FILE_TRAIN_DEDUP_ONEHOT_NA_ONEHOTINT       = 'data/train.dedup.onehot.na.onehotint.csv'
+
+FILE_TEST                                  = 'data/test.csv'
+FILE_TEST_DEDUP                            = 'data/test.dedup.csv'
+FILE_TEST_DEDUP_ONEHOT                     = 'data/test.dedup.onehot.csv'
+FILE_TEST_DEDUP_ONEHOT_NA                  = 'data/test.dedup.onehot.na.csv'
+FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN      = 'data/test.dedup.onehot.na.impute_mean.csv'
+FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN    = 'data/test.dedup.onehot.na.impute_median.csv'
+FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_FREQ      = 'data/test.dedup.onehot.na.impute_freq.csv'
+FILE_TEST_DEDUP_ONEHOT_NA_ONEHOTINT        = 'data/test.dedup.onehot.na.onehotint.csv'
+
+FILE_SAMPLE_SUBMIT                         = 'data/sample_submission.csv'
+
+TARGET_COL                                 = 'TARGET'
 
 
 def read_data(train_csv, test_csv):
     '''
     Read in csv files
     '''
-    # Read in data
     df_train = pd.read_csv(train_csv, index_col='ID')
     feature_cols = list(df_train.columns)
     feature_cols.remove(TARGET_COL)
@@ -32,6 +52,48 @@ def write_data(df_train, df_test, train_csv, test_csv):
     '''
     df_train.to_csv(train_csv)
     df_test.to_csv(test_csv)
+
+
+def read_process_write(train_in_csv, test_in_csv,
+                       train_out_csv, test_out_csv,
+                       process_func,
+                       pass_features=False,
+                       process_kwargs={}):
+    '''
+    Read in data, process them, and save results to file
+    '''
+    df_train, df_test, feature_cols = read_data(train_in_csv, test_in_csv)
+    if pass_features:
+        df_train, df_test = process_func(
+            df_train, df_test, feature_cols, **process_kwargs)
+    else:
+        df_train, df_test = process_func(df_train, df_test, **process_kwargs)
+    write_data(df_train, df_test, train_out_csv, test_out_csv)
+
+
+def summarize_files():
+    '''
+    Summarize number of rows and columns in data files
+    '''
+    def get_sizes(train_csv, test_csv):
+        df_train, df_test, feature_cols = read_data(train_csv, test_csv)
+        train_rows, train_cols = df_train.shape
+        test_rows, test_cols = df_test.shape
+        return train_rows, train_cols, test_rows, test_cols
+
+    data_shapes = []
+    for s, train_csv, test_csv in [
+            ('raw',           FILE_TRAIN,                                 FILE_TEST),
+            ('dedup',         FILE_TRAIN_DEDUP,                           FILE_TEST_DEDUP),
+            ('bin onehot',    FILE_TRAIN_DEDUP_ONEHOT,                    FILE_TEST_DEDUP_ONEHOT),
+            ('NaN',           FILE_TRAIN_DEDUP_ONEHOT_NA,                 FILE_TEST_DEDUP_ONEHOT_NA),
+            ('impute mean',   FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN,     FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN),
+            ('impute median', FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN,   FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN),
+            ('impute freq',   FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_FREQ,     FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_FREQ),
+            ('onehot int',    FILE_TRAIN_DEDUP_ONEHOT_NA_ONEHOTINT,       FILE_TEST_DEDUP_ONEHOT_NA_ONEHOTINT),
+    ]:
+        data_shapes.append((s,) + get_sizes(train_csv, test_csv))
+    return pd.DataFrame(data_shapes, columns=['stage', 'train rows', 'train cols', 'test rows', 'test cols'])
 
 
 def read_split(train_csv, test_csv):
@@ -83,18 +145,6 @@ def remove_duplicates_const(df_train, df_test):
     return df_train, df_test
 
 
-def csv_remove_duplicates_const(train_in_csv, test_in_csv,
-                                train_out_csv, test_out_csv):
-    '''
-    Read in csv files and remove duplicate and const cols
-    Also remove duplicate rows in train data
-    Save results to file
-    '''
-    df_train, df_test, feature_cols = read_data(train_in_csv, test_in_csv)
-    df_train, df_test = remove_duplicates_const(df_train, df_test)
-    write_data(df_train, df_test, train_out_csv, test_out_csv)
-
-
 def one_hot_encode_binary_features(df_train, df_test):
     '''
     One-hot encode binary features, which start with "ind_"
@@ -114,13 +164,51 @@ def one_hot_encode_binary_features(df_train, df_test):
     return df_train, df_test
 
 
-def csv_one_hot_encode_binary_features(train_in_csv, test_in_csv,
-                                       train_out_csv, test_out_csv):
+def impute_null_vals(df_train, df_test, feature_cols, strategy='mean'):
     '''
-    Read in csv files and one-hot encode the binary features,
-    which start with "ind_"
-    and save results to file
+    Impute null values using strategy
     '''
-    df_train, df_test, feature_cols = read_data(train_in_csv, test_in_csv)
-    df_train, df_test = one_hot_encode_binary_features(df_train, df_test)
-    write_data(df_train, df_test, train_out_csv, test_out_csv)
+    # Impute using combined (train + test) datasets
+    df_combined = df_train[feature_cols].append(df_test[feature_cols])
+    imputer = Imputer(
+        missing_values='NaN', strategy=strategy, axis=0, verbose=0, copy=False
+    ).fit(df_combined)
+    df_train[feature_cols] = imputer.transform(df_train[feature_cols])
+    df_test[feature_cols] = imputer.transform(df_test[feature_cols])
+
+    # Remove duplicate columns and rows
+    df_train, df_test = remove_duplicates_const(df_train, df_test)
+
+    return df_train, df_test
+
+
+def one_hot_int(df_train, df_test, feature_cols):
+    '''
+    One-hot encode integer columns that only have a few unique values
+    '''
+    # Ignore already-one hot encoded columns
+    int_cols = feature_cols[:]
+    for c in feature_cols:
+        if c[:6] == 'onehot':
+            int_cols.remove(c)
+
+    # Fine categorical columns
+    categorical_cols = eda.find_categorical_columns(
+        df_train[int_cols], df_test)
+
+    # Convert non-null value containing columns to integers
+    bad_cols = {'delta_imp_trasp_var17_in_1y3', 'delta_imp_trasp_var33_in_1y3'}
+    for c, n in categorical_cols:
+        # Dont turn null values to int
+        if c not in bad_cols:
+            df_train[c] = df_train[c].values.astype(int)
+
+    # One-hot encode the categorical columns
+    catcols = list(map(lambda t: t[0], categorical_cols))
+    df_train = munge.one_hot_encode_features(df_train, columns=catcols)
+    df_test = munge.one_hot_encode_features(df_test, columns=catcols)
+
+    # Remove duplicate columns and rows
+    df_train, df_test = remove_duplicates_const(df_train, df_test)
+
+    return df_train, df_test
