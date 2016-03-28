@@ -22,6 +22,8 @@ FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN     = 'data/train.dedup.onehot.na.impute_
 FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN   = 'data/train.dedup.onehot.na.impute_median.csv'
 FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_FREQ     = 'data/train.dedup.onehot.na.impute_freq.csv'
 FILE_TRAIN_DEDUP_ONEHOT_NA_ONEHOTINT       = 'data/train.dedup.onehot.na.onehotint.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTA_1HOT           = 'data/train.dedup.var3.delta.1hot.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTA_1HOT_1HOTINT   = 'data/train.dedup.var3.delta.1hot.1hotint.csv'
 
 FILE_TEST                                  = 'data/test.csv'
 FILE_TEST_DEDUP                            = 'data/test.dedup.csv'
@@ -31,6 +33,8 @@ FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN      = 'data/test.dedup.onehot.na.impute_m
 FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN    = 'data/test.dedup.onehot.na.impute_median.csv'
 FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_FREQ      = 'data/test.dedup.onehot.na.impute_freq.csv'
 FILE_TEST_DEDUP_ONEHOT_NA_ONEHOTINT        = 'data/test.dedup.onehot.na.onehotint.csv'
+FILE_TEST_DEDUP_VAR3_DELTA_1HOT            = 'data/test.dedup.var3.delta.1hot.csv'
+FILE_TEST_DEDUP_VAR3_DELTA_1HOT_1HOTINT    = 'data/test.dedup.var3.delta.1hot.1hotint.csv'
 
 FILE_SAMPLE_SUBMIT                         = 'data/sample_submission.csv'
 
@@ -198,11 +202,10 @@ def one_hot_int(df_train, df_test, feature_cols):
     categorical_cols = eda.find_categorical_columns(
         df_train[int_cols], df_test)
 
-    # Convert non-null value containing columns to integers
-    bad_cols = {'delta_imp_trasp_var17_in_1y3', 'delta_imp_trasp_var33_in_1y3'}
+    # Convert df_train categorical columns to integers
     for c, n in categorical_cols:
-        # Dont turn null values to int
-        if c not in bad_cols:
+        # Don't convert column containing float values to int
+        if c != "delta_num_aport_var33_1y3":
             df_train[c] = df_train[c].values.astype(int)
 
     # One-hot encode the categorical columns
