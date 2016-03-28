@@ -2,6 +2,8 @@
 Description: Library of functions to be used in the Santander competition
 Author: Joseph Kim
 '''
+
+import numpy as np
 import pandas as pd
 import sys
 from sklearn.cross_validation import train_test_split
@@ -112,7 +114,7 @@ def read_split(train_csv, test_csv):
     X_train, X_test, y_train, y_test = train_test_split(
         X_all, y_all, test_size=test_size, random_state=0, stratify=y_all)
 
-    return X_train, y_train, X_test, y_test, feature_cols, df_test
+    return X_train, y_train, X_test, y_test, feature_cols, df_train, df_test
 
 
 def dedup(df):
@@ -211,4 +213,27 @@ def one_hot_int(df_train, df_test, feature_cols):
     # Remove duplicate columns and rows
     df_train, df_test = remove_duplicates_const(df_train, df_test)
 
+    return df_train, df_test
+
+
+def set_var3_null(df_train, df_test):
+    '''
+    Replace the null values in var3 column
+    '''
+    df_train['var3'] = df_train.var3.replace(-999999, np.nan)
+    df_test['var3'] = df_test.var3.replace(-999999, np.nan)
+    return df_train, df_test
+
+
+def fix_delta_cols(df_train, df_test, replace_with=1):
+    '''
+    Fix the columns starting with "delta", which contain
+    9999999999 values
+    '''
+    ANOMALY = 9999999999
+    # Find delta cols
+    for c in df_train:
+        if c.find('delta') == 0:
+            df_train[c] = df_train[c].replace(ANOMALY, replace_with)
+            df_test[c] = df_test[c].replace(ANOMALY, replace_with)
     return df_train, df_test
