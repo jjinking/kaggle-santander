@@ -187,9 +187,12 @@ def impute_null_vals(df_train, df_test, feature_cols, strategy='mean'):
     return df_train, df_test
 
 
-def one_hot_int(df_train, df_test, feature_cols):
+def one_hot_int(df_train, df_test, feature_cols, delta_nulltype=int):
     '''
     One-hot encode integer columns that only have a few unique values
+
+    delta_nulltype can be either int or np.nan, which determines what the
+    anomaly values in delta_ columns have been replaced with.
     '''
     # Ignore already-one hot encoded columns
     int_cols = feature_cols[:]
@@ -202,9 +205,14 @@ def one_hot_int(df_train, df_test, feature_cols):
         df_train[int_cols], df_test)
 
     # Convert df_train categorical columns to integers
+    # Don't convert column containing float values to int
+    bad_cols = {"delta_num_aport_var33_1y3"}  # delta_nulltype is int
+    if delta_nulltype is np.nan:
+        # Convert only non-null value containing columns to integers
+        bad_cols = {'delta_imp_trasp_var17_in_1y3',
+                    'delta_imp_trasp_var33_in_1y3'}
     for c, n in categorical_cols:
-        # Don't convert column containing float values to int
-        if c != "delta_num_aport_var33_1y3":
+        if c not in bad_cols:
             df_train[c] = df_train[c].values.astype(int)
 
     # One-hot encode the categorical columns
