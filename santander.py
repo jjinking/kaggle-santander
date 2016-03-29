@@ -102,7 +102,7 @@ def summarize_files():
     return pd.DataFrame(data_shapes, columns=['stage', 'train rows', 'train cols', 'test rows', 'test cols'])
 
 
-def read_split(train_csv, test_csv):
+def read_split(train_csv, test_csv, test_size=0.3, random_state=0):
     '''
     Read in csv files, and split the train data into train and test sets
     to be used during modeling.
@@ -111,12 +111,11 @@ def read_split(train_csv, test_csv):
     df_train, df_test, feature_cols = read_data(train_csv, test_csv)
 
     # Split up the data
-    X_all = df_train[feature_cols]  # feature values for all students
+    X_all = df_train[feature_cols]
     y_all = df_train[TARGET_COL]
 
-    test_size = 0.3 # 30 percent
     X_train, X_test, y_train, y_test = train_test_split(
-        X_all, y_all, test_size=test_size, random_state=0, stratify=y_all)
+        X_all, y_all, test_size=test_size, random_state=random_state, stratify=y_all)
 
     return X_train, y_train, X_test, y_test, feature_cols, df_train, df_test
 
