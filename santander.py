@@ -6,35 +6,42 @@ Author: Joseph Kim
 import numpy as np
 import pandas as pd
 import sys
+import xgboost as xgb
 from sklearn.cross_validation import train_test_split
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import Imputer
+
 from os.path import expanduser
 sys.path.insert(1, '{}/datsci'.format(expanduser('~')))
-
 from datsci import eda, munge
 
 
-FILE_TRAIN                                 = 'data/train.csv'
-FILE_TRAIN_DEDUP                           = 'data/train.dedup.csv'
-FILE_TRAIN_DEDUP_ONEHOT                    = 'data/train.dedup.onehot.csv'
-FILE_TRAIN_DEDUP_ONEHOT_NA                 = 'data/train.dedup.onehot.na.csv'
-FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN     = 'data/train.dedup.onehot.na.impute_mean.csv'
-FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN   = 'data/train.dedup.onehot.na.impute_median.csv'
-FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_FREQ     = 'data/train.dedup.onehot.na.impute_freq.csv'
-FILE_TRAIN_DEDUP_ONEHOT_NA_ONEHOTINT       = 'data/train.dedup.onehot.na.onehotint.csv'
-FILE_TRAIN_DEDUP_VAR3_DELTA_1HOT           = 'data/train.dedup.var3.delta.1hot.csv'
-FILE_TRAIN_DEDUP_VAR3_DELTA_1HOT_1HOTINT   = 'data/train.dedup.var3.delta.1hot.1hotint.csv'
+FILE_TRAIN                                         = 'data/train.csv'
+FILE_TRAIN_DEDUP                                   = 'data/train.dedup.csv'
+# FILE_TRAIN_DEDUP_ONEHOT                            = 'data/train.dedup.onehot.csv'
+# FILE_TRAIN_DEDUP_ONEHOT_NA                         = 'data/train.dedup.onehot.na.csv'
+# FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN             = 'data/train.dedup.onehot.na.impute_mean.csv'
+# FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN           = 'data/train.dedup.onehot.na.impute_median.csv'
+# FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_FREQ             = 'data/train.dedup.onehot.na.impute_freq.csv'
+# FILE_TRAIN_DEDUP_ONEHOT_NA_ONEHOTINT               = 'data/train.dedup.onehot.na.onehotint.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTA1_1HOT                  = 'data/train.dedup.var3.delta1.1hot.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTA1_1HOT_1HOTINT          = 'data/train.dedup.var3.delta1.1hot.1hotint.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTANAN_1HOT                = 'data/train.dedup.var3.deltanan.1hot.csv'
+FILE_TRAIN_DEDUP_VAR3_DELTANAN_1HOT_1HOTINT        = 'data/train.dedup.var3.deltanan.1hot.1hotint.csv'
 
-FILE_TEST                                  = 'data/test.csv'
-FILE_TEST_DEDUP                            = 'data/test.dedup.csv'
-FILE_TEST_DEDUP_ONEHOT                     = 'data/test.dedup.onehot.csv'
-FILE_TEST_DEDUP_ONEHOT_NA                  = 'data/test.dedup.onehot.na.csv'
-FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN      = 'data/test.dedup.onehot.na.impute_mean.csv'
-FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN    = 'data/test.dedup.onehot.na.impute_median.csv'
-FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_FREQ      = 'data/test.dedup.onehot.na.impute_freq.csv'
-FILE_TEST_DEDUP_ONEHOT_NA_ONEHOTINT        = 'data/test.dedup.onehot.na.onehotint.csv'
-FILE_TEST_DEDUP_VAR3_DELTA_1HOT            = 'data/test.dedup.var3.delta.1hot.csv'
-FILE_TEST_DEDUP_VAR3_DELTA_1HOT_1HOTINT    = 'data/test.dedup.var3.delta.1hot.1hotint.csv'
+FILE_TEST                                          = 'data/test.csv'
+FILE_TEST_DEDUP                                    = 'data/test.dedup.csv'
+# FILE_TEST_DEDUP_ONEHOT                             = 'data/test.dedup.onehot.csv'
+# FILE_TEST_DEDUP_ONEHOT_NA                          = 'data/test.dedup.onehot.na.csv'
+# FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN              = 'data/test.dedup.onehot.na.impute_mean.csv'
+# FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEDIAN            = 'data/test.dedup.onehot.na.impute_median.csv'
+# FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_FREQ              = 'data/test.dedup.onehot.na.impute_freq.csv'
+# FILE_TEST_DEDUP_ONEHOT_NA_ONEHOTINT                = 'data/test.dedup.onehot.na.onehotint.csv'
+FILE_TEST_DEDUP_VAR3_DELTA1_1HOT                   = 'data/test.dedup.var3.delta1.1hot.csv'
+FILE_TEST_DEDUP_VAR3_DELTA1_1HOT_1HOTINT           = 'data/test.dedup.var3.delta1.1hot.1hotint.csv'
+FILE_TEST_DEDUP_VAR3_DELTANAN_1HOT                 = 'data/test.dedup.var3.deltanan.1hot.csv'
+FILE_TEST_DEDUP_VAR3_DELTANAN_1HOT_1HOTINT         = 'data/test.dedup.var3.deltanan.1hot.1hotint.csv'
+
 
 FILE_SAMPLE_SUBMIT                         = 'data/sample_submission.csv'
 
@@ -247,3 +254,47 @@ def fix_delta_cols(df_train, df_test, replace_with=1):
             df_train[c] = df_train[c].replace(ANOMALY, replace_with)
             df_test[c] = df_test[c].replace(ANOMALY, replace_with)
     return df_train, df_test
+
+
+def cv_fit_xgb_model(model,
+                     X_train, y_train,
+                     X_test, y_test,
+                     cv_nfold=5,
+                     early_stopping_rounds=50,
+                     missing=np.nan):
+    '''
+    Fit xgb model with best n_estimators using xgb builtin cv
+    '''
+
+    # Train cv
+    xgb_param = model.get_xgb_params()
+    dtrain = xgb.DMatrix(X_train.values, label=y_train.values, missing=missing)
+    cv_result = xgb.cv(
+        xgb_param,
+        dtrain,
+        num_boost_round=model.get_params()['n_estimators'],
+        nfold=cv_nfold,
+        metrics=['auc'],
+        early_stopping_rounds=early_stopping_rounds,
+        show_progress=False)
+    best_n_estimators = cv_result.shape[0]
+    model.set_params(n_estimators=best_n_estimators)
+
+    # Train model
+    model.fit(X_train, y_train, eval_metric='auc')
+
+    # Predict training data
+    y_hat_train = model.predict(X_train)
+
+    # Predict test data
+    y_hat_test = model.predict(X_test)
+
+    # Print model report:
+    print("\nModel Report")
+    print("best n_estimators: {}".format(best_n_estimators))
+    print("AUC Score (Train): %f" % roc_auc_score(y_train, y_hat_train))
+    print("AUC Score (Test) : %f" % roc_auc_score(y_test,  y_hat_test))
+
+    # feat_imp = pd.Series(model.booster().get_fscore()).sort_values(ascending=False)
+    # feat_imp.plot(kind='bar', title='Feature Importances')
+    # plt.ylabel('Feature Importance Score')
