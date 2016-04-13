@@ -47,6 +47,8 @@ FILE_SAMPLE_SUBMIT                         = 'data/sample_submission.csv'
 
 TARGET_COL                                 = 'TARGET'
 
+RANDOM_SEED = 53
+
 
 def read_data(train_csv, test_csv):
     '''
