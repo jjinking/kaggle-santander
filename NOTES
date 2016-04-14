@@ -1,0 +1,60 @@
+TODO
+
+D - go through all the columns, and figure out what the null values are represented as
+
+D - remove constant columns again, after setting all the null values in the columns
+
+D - impute NaN with entire train and test data: https://www.kaggle.com/cbrogan/titanic/xgboost-example-python
+
+D - find all categorical columns (that are not binary), and one-hot encode them
+
+D - Go through this tutorial: XGB Guidelines
+    http://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
+
+D - check the columns in the original data with 9999999999 - may need to modify for some sort of ratio - not necessarily NaN
+
+D - fine-tune xgb models and submit to kaggle
+    D - fine-tune w 999999 set as null
+    D - add one more step to processed data - impute var3
+    
+D - run python version with same exact params as high score model, and see what i get
+
+D - using sum_zeros and pca components
+    - https://www.kaggle.com/scirpus/santander-customer-satisfaction/python-xgb-lb-41047/code
+    
+- Fine-tune xgb with sum_zeros
+    
+- write algorithm to compute multiple subsets of training data by repeating positive examples randomly
+- stacked generalization with xgb with multiple data
+    - create L = # majority / # minority models, and ensemble them
+
+- create logistic regression models
+    D - try between robust_scale and log transforming absolute values
+    - transform data that has exponentially growing values, i.e. log
+    - try preprocessing.normalize
+    - combine feature selection from lasso and from tree-based
+    - create L = # majority / # minority models, and ensemble them
+    - weighting positive samples
+    
+- create tensorflow models with same features as logistic regression models
+
+- ensembling, stacked generalization and blending models
+    - using xgb
+    - using lr
+    - using tensorflow
+    - mixing all three
+
+- check columns that contain the word "saldo" - features that are linear combinations of other features
+    https://www.kaggle.com/sionek/santander-customer-satisfaction/reverse-feature-engineering/log
+- Check for weird columns, possibly useless
+
+- find advanced ways to deal with training data that has unbalanced labels
+    - weighting - svm, logistic regression
+    - SMOTE
+        - http://comments.gmane.org/gmane.comp.python.scikit-learn/5278
+        - https://github.com/fmfn/UnbalancedDataset
+    - create L = # majority / # minority models, and ensemble them
+        - use different algorithms - i.e. svm and logistic regression with weights
+    - http://machinelearningmastery.com/tactics-to-combat-imbalanced-classes-in-your-machine-learning-dataset/
+
+- modify .9 predictions to 1.0, etc

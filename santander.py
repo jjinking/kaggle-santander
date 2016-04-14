@@ -18,6 +18,7 @@ from datsci import eda, munge
 
 FILE_TRAIN                                         = 'data/train.csv'
 FILE_TRAIN_DEDUP                                   = 'data/train.dedup.csv'
+FILE_TRAIN_DEDUP_NZ                                = 'data/train.dedup.nz.csv'
 # FILE_TRAIN_DEDUP_ONEHOT                            = 'data/train.dedup.onehot.csv'
 # FILE_TRAIN_DEDUP_ONEHOT_NA                         = 'data/train.dedup.onehot.na.csv'
 # FILE_TRAIN_DEDUP_ONEHOT_NA_IMPUTE_MEAN             = 'data/train.dedup.onehot.na.impute_mean.csv'
@@ -31,6 +32,7 @@ FILE_TRAIN_DEDUP_VAR3_DELTANAN_1HOT_1HOTINT        = 'data/train.dedup.var3.delt
 
 FILE_TEST                                          = 'data/test.csv'
 FILE_TEST_DEDUP                                    = 'data/test.dedup.csv'
+FILE_TEST_DEDUP_NZ                                 = 'data/test.dedup.nz.csv'
 # FILE_TEST_DEDUP_ONEHOT                             = 'data/test.dedup.onehot.csv'
 # FILE_TEST_DEDUP_ONEHOT_NA                          = 'data/test.dedup.onehot.na.csv'
 # FILE_TEST_DEDUP_ONEHOT_NA_IMPUTE_MEAN              = 'data/test.dedup.onehot.na.impute_mean.csv'
@@ -241,6 +243,16 @@ def set_var3_null(df_train, df_test):
     '''
     df_train['var3'] = df_train.var3.replace(-999999, np.nan)
     df_test['var3'] = df_test.var3.replace(-999999, np.nan)
+    return df_train, df_test
+
+
+def set_nz_cols(df_train, df_test):
+    """Create a new feature containing the number of zeros
+    """
+    feature_cols = list(df_train.columns)
+    feature_cols.remove(TARGET_COL)
+    df_train['n_zeros'] = (df_train[feature_cols] == 0).astype(int).sum(axis=1)
+    df_test['n_zeros'] = (df_test[feature_cols] == 0).astype(int).sum(axis=1)
     return df_train, df_test
 
 
