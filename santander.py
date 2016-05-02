@@ -115,7 +115,7 @@ def summarize_files():
 
 def read_split(train_csv, test_csv, test_size=0.3, random_state=0):
     '''
-    Read in csv files, and split the train data into train and test sets
+    Read in csv files, and split the train data into train and validation sets
     to be used during modeling.
     The test csv data is used for submissions
     '''
@@ -125,10 +125,10 @@ def read_split(train_csv, test_csv, test_size=0.3, random_state=0):
     X_all = df_train[feature_cols]
     y_all = df_train[TARGET_COL]
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train, X_valid, y_train, y_valid = train_test_split(
         X_all, y_all, test_size=test_size, random_state=random_state, stratify=y_all)
 
-    return X_train, y_train, X_test, y_test, feature_cols, df_train, df_test
+    return X_train, y_train, X_valid, y_valid, feature_cols, df_train, df_test
 
 
 def dedup(df):
@@ -272,7 +272,7 @@ def fix_delta_cols(df_train, df_test, replace_with=1):
 
 def cv_fit_xgb_model(model,
                      X_train, y_train,
-                     X_test, y_test,
+                     X_valid, y_valid,
                      cv_nfold=5,
                      early_stopping_rounds=50,
                      missing=np.nan):
@@ -301,13 +301,13 @@ def cv_fit_xgb_model(model,
     y_hat_train = model.predict(X_train)
 
     # Predict test data
-    y_hat_test = model.predict(X_test)
+    y_hat_test = model.predict(X_valid)
 
     # Print model report:
     print("\nModel Report")
     print("best n_estimators: {}".format(best_n_estimators))
     print("AUC Score (Train): %f" % roc_auc_score(y_train, y_hat_train))
-    print("AUC Score (Test) : %f" % roc_auc_score(y_test,  y_hat_test))
+    print("AUC Score (Test) : %f" % roc_auc_score(y_valid,  y_hat_test))
 
     # feat_imp = pd.Series(model.booster().get_fscore()).sort_values(ascending=False)
     # feat_imp.plot(kind='bar', title='Feature Importances')

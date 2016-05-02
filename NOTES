@@ -22,16 +22,20 @@ D - run python version with same exact params as high score model, and see what 
 D - using sum_zeros and pca components
     - https://www.kaggle.com/scirpus/santander-customer-satisfaction/python-xgb-lb-41047/code
     
-- Fine-tune xgb with sum_zeros
-    
-- write algorithm to compute multiple subsets of training data by repeating positive examples randomly
-- stacked generalization with xgb with multiple data
-    - create L = # majority / # minority models, and ensemble them
+D - Fine-tune xgb with sum_zeros - useless
 
+D - write algorithm to compute balanced subsets of training data by repeating positive examples randomly
+
+D - stacked generalization with xgb with balanced subsets
+    D - create L = # majority / # minority models, and ensemble them
+    - Fine-tune stacker model
+    D - Use logistic regression as stacker model
+    D - Use AdaBoostRegressor as stacker model
+    
 - create logistic regression models
     D - try between robust_scale and log transforming absolute values
-    - transform data that has exponentially growing values, i.e. log
     - try preprocessing.normalize
+    - transform data that has exponentially growing values, i.e. log
     - combine feature selection from lasso and from tree-based
     - create L = # majority / # minority models, and ensemble them
     - weighting positive samples
